@@ -1,0 +1,17 @@
+sample:
+  description: Generate random HUK and encrypt and decrypt data using the HUK derived key
+  name: LCZ HUK
+common:
+    tags: lcz_hw_key
+    platform_allow: pinnacle_100_dvk bl5340_dvk_cpuapp
+    integration_platforms:
+      - pinnacle_100_dvk
+      - bl5340_dvk_cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Decrypted data: This is an example string that will be encrypted and decrypted."
+tests:
+  lcz.hw_key:
+    tags: lcz_hw_key ci_build

@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2022 Laird Connectivity LLC
+#
+# SPDX-License-Identifier: LicenseRef-LairdConnectivity-Clause
+#
+menuconfig LCZ_HW_KEY
+    bool "LC HW Key API"
+    depends on NRF_SECURITY
+    depends on HW_UNIQUE_KEY
+    depends on HW_UNIQUE_KEY_RANDOM
+    depends on MPU_ALLOW_FLASH_WRITE
+    depends on MBEDTLS_ENABLE_HEAP
+    depends on MBEDTLS_PSA_CRYPTO_C
+
+if LCZ_HW_KEY
+
+module=LCZ_HW_KEY
+module-dep=LOG
+module-str=Log level
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+config LCZ_HW_KEY_REBOOT_DELAY_SECONDS
+    int "Reboot delay"
+    default 5
+
+endif # LCZ_HW_KEY
