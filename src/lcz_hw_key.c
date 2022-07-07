@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(lcz_hw_key, CONFIG_LCZ_HW_KEY_LOG_LEVEL);
 static psa_key_id_t id;
 
 static const uint8_t key_label[] = "HUK";
-static const uint8_t auth_data[] = "Auth data string";
 
 /**************************************************************************************************/
 /* Local Function Prototypes                                                                      */
@@ -129,18 +128,18 @@ int lcz_hw_key_generate_iv(uint8_t *iv_buf, size_t iv_buf_size)
 	return ret;
 }
 
-int lcz_hw_key_encrypt_data(const uint8_t *iv_buf, size_t iv_buf_size, const uint8_t *data,
-			    size_t data_size, uint8_t *encrypted_data_buf,
-			    size_t encrypted_data_buf_size, uint32_t *encrypted_data_out_size)
+int lcz_hw_key_encrypt_data(const uint8_t *iv_buf, size_t iv_buf_size, const uint8_t *ad,
+			    size_t ad_len, const uint8_t *data, size_t data_size,
+			    uint8_t *encrypted_data_buf, size_t encrypted_data_buf_size,
+			    uint32_t *encrypted_data_out_size)
 {
 	int ret;
 	psa_status_t s;
 
 	ret = 0;
 
-	s = psa_aead_encrypt(id, ENCRYPT_ALG, iv_buf, iv_buf_size, auth_data, strlen(auth_data),
-			     data, data_size, encrypted_data_buf, encrypted_data_buf_size,
-			     encrypted_data_out_size);
+	s = psa_aead_encrypt(id, ENCRYPT_ALG, iv_buf, iv_buf_size, ad, ad_len, data, data_size,
+			     encrypted_data_buf, encrypted_data_buf_size, encrypted_data_out_size);
 	if (s != PSA_SUCCESS) {
 		LOG_ERR("Could not encrypt data [%d]", s);
 		ret = s;
@@ -157,17 +156,18 @@ done:
 	return ret;
 }
 
-int lcz_hw_key_decrypt_data(const uint8_t *iv_buf, size_t iv_buf_size,
-			    const uint8_t *encrypted_data, size_t encrypted_data_length,
-			    uint8_t *data, size_t data_size, uint32_t *data_out_size)
+int lcz_hw_key_decrypt_data(const uint8_t *iv_buf, size_t iv_buf_size, const uint8_t *ad,
+			    size_t ad_len, const uint8_t *encrypted_data,
+			    size_t encrypted_data_length, uint8_t *data, size_t data_size,
+			    uint32_t *data_out_size)
 {
 	int ret;
 	psa_status_t s;
 
 	ret = 0;
 
-	s = psa_aead_decrypt(id, ENCRYPT_ALG, iv_buf, iv_buf_size, auth_data, strlen(auth_data),
-			     encrypted_data, encrypted_data_length, data, data_size, data_out_size);
+	s = psa_aead_decrypt(id, ENCRYPT_ALG, iv_buf, iv_buf_size, ad, ad_len, encrypted_data,
+			     encrypted_data_length, data, data_size, data_out_size);
 
 	if (s != PSA_SUCCESS) {
 		LOG_ERR("Could not decrypt data [%d]", s);
