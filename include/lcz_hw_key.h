@@ -31,17 +31,6 @@ extern "C" {
 /**************************************************************************************************/
 
 /**
- * @brief Generates a hardware unique key if one does not already exist and
- * stores it.
- * If the key is being generated, certain platforms may require a reboot to allow the bootloader
- * to securely store the key.
- * The encryption/decryption library will also be initialized.
- *
- * @return int 0 on success.
- */
-int lcz_hw_key_generate_and_init(void);
-
-/**
  * @brief Generate a random initialization vector (nonce)
  *
  * @param iv_buf buffer to store the IV

@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(lcz_hw_key, CONFIG_LCZ_HW_KEY_LOG_LEVEL);
 #include <zephyr.h>
 #include <string.h>
 #include <errno.h>
+#include <init.h>
 #include <hw_unique_key.h>
 #include <psa/crypto.h>
 #ifdef CONFIG_BUILD_WITH_TFM
@@ -53,65 +54,13 @@ static const uint8_t key_label[] = "HUK";
 /**************************************************************************************************/
 /* Local Function Prototypes                                                                      */
 /**************************************************************************************************/
+static int lcz_hw_key_generate_and_init(const struct device *device);
 static psa_key_id_t derive_key(psa_key_attributes_t *attributes, uint8_t *key_label,
 			       uint32_t label_size);
 
 /**************************************************************************************************/
 /* Global Function Definitions                                                                    */
 /**************************************************************************************************/
-int lcz_hw_key_generate_and_init(void)
-{
-	int ret;
-	psa_status_t s;
-	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
-
-#if !defined(CONFIG_BUILD_WITH_TFM)
-	ret = nrf_cc3xx_platform_init();
-	if (ret != NRF_CC3XX_PLATFORM_SUCCESS) {
-		LOG_ERR("could not init cc3xx [%d]", ret);
-		ret = -EIO;
-		goto done;
-	}
-
-	if (!hw_unique_key_are_any_written()) {
-		LOG_INF("HUK does not exist, generate it");
-		hw_unique_key_write_random();
-		LOG_INF("HUK generated!");
-
-#if !defined(HUK_HAS_KMU)
-		LOG_WRN("Rebooting in %d seconds to store HUK securely",
-			CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS);
-		k_sleep(K_SECONDS(CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS));
-		/* Reboot to allow the bootloader to load the key into CryptoCell. */
-		sys_reboot(0);
-#endif
-	}
-#endif
-
-	s = psa_crypto_init();
-	if (s != PSA_SUCCESS) {
-		LOG_ERR("Could not init PSA crypto [%d]", s);
-		ret = -EIO;
-		goto done;
-	}
-
-	psa_set_key_usage_flags(&key_attr, (PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT));
-	psa_set_key_algorithm(&key_attr, ENCRYPT_ALG);
-	psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
-	psa_set_key_bits(&key_attr, PSA_BYTES_TO_BITS(HUK_SIZE_BYTES));
-
-	id = derive_key(&key_attr, (uint8_t *)key_label, strlen(key_label));
-	if (id == 0) {
-		ret = -EIO;
-		goto done;
-	}
-
-	psa_reset_key_attributes(&key_attr);
-
-done:
-	return ret;
-}
-
 int lcz_hw_key_generate_iv(uint8_t *iv_buf, size_t iv_buf_size)
 {
 	int ret;
@@ -247,3 +196,60 @@ done:
 	return kid;
 }
 #endif
+
+/**************************************************************************************************/
+/* SYS INIT                                                                                       */
+/**************************************************************************************************/
+SYS_INIT(lcz_hw_key_generate_and_init, APPLICATION, CONFIG_LCZ_HW_KEY_INIT_PRIORITY);
+static int lcz_hw_key_generate_and_init(const struct device *device)
+{
+	int ret;
+	psa_status_t s;
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+
+#if !defined(CONFIG_BUILD_WITH_TFM)
+	ret = nrf_cc3xx_platform_init();
+	if (ret != NRF_CC3XX_PLATFORM_SUCCESS) {
+		LOG_ERR("could not init cc3xx [%d]", ret);
+		ret = -EIO;
+		goto done;
+	}
+
+	if (!hw_unique_key_are_any_written()) {
+		LOG_INF("HUK does not exist, generate it");
+		hw_unique_key_write_random();
+		LOG_INF("HUK generated!");
+
+#if !defined(HUK_HAS_KMU)
+		LOG_WRN("Rebooting in %d seconds to store HUK securely",
+			CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS);
+		k_sleep(K_SECONDS(CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS));
+		/* Reboot to allow the bootloader to load the key into CryptoCell. */
+		sys_reboot(0);
+#endif
+	}
+#endif
+
+	s = psa_crypto_init();
+	if (s != PSA_SUCCESS) {
+		LOG_ERR("Could not init PSA crypto [%d]", s);
+		ret = -EIO;
+		goto done;
+	}
+
+	psa_set_key_usage_flags(&key_attr, (PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT));
+	psa_set_key_algorithm(&key_attr, ENCRYPT_ALG);
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&key_attr, PSA_BYTES_TO_BITS(HUK_SIZE_BYTES));
+
+	id = derive_key(&key_attr, (uint8_t *)key_label, strlen(key_label));
+	if (id == 0) {
+		ret = -EIO;
+		goto done;
+	}
+
+	psa_reset_key_attributes(&key_attr);
+
+done:
+	return ret;
+}

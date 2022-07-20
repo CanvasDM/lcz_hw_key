@@ -19,6 +19,11 @@ module-dep=LOG
 module-str=Log level
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
+config LCZ_HW_KEY_INIT_PRIORITY
+    int "HW Key Init Priority (APPLICATION)"
+    range 0 99
+    default 1
+
 config LCZ_HW_KEY_REBOOT_DELAY_SECONDS
     int "Reboot delay"
     default 5
