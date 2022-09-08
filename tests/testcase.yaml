@@ -3,10 +3,12 @@ sample:
   name: LCZ HUK
 common:
     tags: lcz_hw_key
-    platform_allow: pinnacle_100_dvk bl5340_dvk_cpuapp
+    platform_allow: pinnacle_100_dvk bl5340_dvk_cpuapp bt610 mg100
     integration_platforms:
       - pinnacle_100_dvk
       - bl5340_dvk_cpuapp
+      - bt610
+      - mg100
     harness: console
     harness_config:
       type: multi_line
