@@ -12,10 +12,10 @@ LOG_MODULE_REGISTER(lcz_hw_key, CONFIG_LCZ_HW_KEY_LOG_LEVEL);
 /******************************************************************************/
 /* Includes                                                                   */
 /******************************************************************************/
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <hw_unique_key.h>
 #include <psa/crypto.h>
 #ifdef CONFIG_BUILD_WITH_TFM
@@ -24,7 +24,8 @@ LOG_MODULE_REGISTER(lcz_hw_key, CONFIG_LCZ_HW_KEY_LOG_LEVEL);
 #include <nrf_cc3xx_platform.h>
 #endif
 #if !defined(HUK_HAS_KMU)
-#include <sys/reboot.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/logging/log_ctrl.h>
 #endif
 
 #include "lcz_hw_key.h"
@@ -221,11 +222,10 @@ static int lcz_hw_key_generate_and_init(const struct device *device)
 		LOG_INF("HUK generated!");
 
 #if !defined(HUK_HAS_KMU)
-		LOG_WRN("Rebooting in %d seconds to store HUK securely",
-			CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS);
-		k_sleep(K_SECONDS(CONFIG_LCZ_HW_KEY_REBOOT_DELAY_SECONDS));
+		LOG_WRN("Rebooting to store HUK securely");
+		LOG_PANIC();
 		/* Reboot to allow the bootloader to load the key into CryptoCell. */
-		sys_reboot(0);
+		sys_reboot(SYS_REBOOT_COLD);
 #endif
 	}
 #endif

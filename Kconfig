@@ -24,8 +24,4 @@ config LCZ_HW_KEY_INIT_PRIORITY
     range 0 99
     default 1
 
-config LCZ_HW_KEY_REBOOT_DELAY_SECONDS
-    int "Reboot delay"
-    default 5
-
 endif # LCZ_HW_KEY
